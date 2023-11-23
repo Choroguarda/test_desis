@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Formulario</title>
+    <style>
+        /* Puedes  estilos CSS para odernar el formulario*/
+        label {
+            display: block;
+            margin-bottom: 8px;
+        }
+
+        input[type="text"],
+        select {
+            margin-bottom: 16px;
+        }
+
+        input[type="checkbox"] {
+            margin-right: 8px;
+        }
+
+        .checkbox-group {
+            margin-bottom: 16px;
+        }
+
+        .checkbox-group label {
+            display: inline-block;
+            margin-right: 16px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h1>Formulario</h1>
+
+    <form id="form">
+        <label for="campo1">Nombre y Apellido:</label>
+        <input type="text" id="campo1" name="campo1" required><br>
+
+        <label for="campo2">Alias:</label>
+        <input type="text" id="campo2" name="campo2" required><br>
+
+        <form id="rutForm">
+            <label for="rut">Ingrese su RUT:</label>
+            <input type="text" id="rut" name="rut" required>
+            <div id="resultadoRut"></div>
+        </form>
+
+        <label for="campo4">Email:</label>
+        <input type="text" id="campo4" name="campo4" required><br>
+
+        <label for="combo1">Región:</label>
+        <select id="combo1" name="combo1"></select><br>
+
+        <label for="combo2">Provincia:</label>
+        <select id="combo2" name="combo2" disabled>
+            <option value="" selected>Selecciona una región primero</option>
+        </select>
+
+        <label for="combo3">Comuna:</label>
+        <select id="combo3" name="combo3" disabled>
+            <option value="" selected>Selecciona una provincia primero</option>
+        </select>
+
+        <label for="combo4">Candidato:</label>
+        <select id="combo4" name="combo4"></select><br>
+
+        <div class="checkbox-group">
+            <label>¿Cómo se enteró de nosotros?</label>
+            <input type="checkbox" id="web" name="web">
+            <label for="web">Web</label>
+
+            <input type="checkbox" id="tv" name="tv">
+            <label for="tv">TV</label>
+
+            <input type="checkbox" id="socialnet" name="socialnet">
+            <label for="socialnet">Redes Sociales</label>
+
+            <input type="checkbox" id="friend" name="friend">
+            <label for="friend">Amigo</label>
+        </div>
+
+        <button type="button" id="votarBtn">Votar</button>
+    </form>
+
+    <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+
+    <script>
+        (function ($) {
+            $(document).ready(function () {
+                // carga los combobox, de las regiones y los canditados
+                cargarRegiones();
+                cargarCandidatos();
+
+
+                //funcion que se encarga de limpiar los datos ingresaods
+                function limpiarCampos() {
+                    $('#campo1').val('');
+                    $('#campo2').val('');
+                    $('#campo4').val('');
+                    $('#rut').val('');
+                    $('#web').prop('checked', false);
+                    $('#tv').prop('checked', false);
+                    $('#socialnet').prop('checked', false);
+                    $('#friend').prop('checked', false);
+                    cargarRegiones();  // Asegúrate de que esta función cargue la opción por defecto en combo1
+                    $('#combo2').empty().prop('disabled', true).append('<option value="">Selecciona una provincia</option>');
+                    $('#combo3').empty().prop('disabled', true).append('<option value="">Selecciona una comuna</option>');
+                    cargarCandidatos();
+                }
+
+                //funcion que carga los candidatos
+                function cargarCandidatos() {
+                    //llama a la accion obtenerCandidatos del form.php y obtiene el resultado de la consulta 
+                    $.ajax({
+                        url: 'form.php',
+                        type: 'GET',
+                        data: { accion: 'obtenerCandidatos' },
+                        dataType: 'json',
+                        success: function (data) {
+                            //Luego se crea la variable combo4 y se llena respectivamente el id del combobox con los datos obtenidos
+                            var combo4 = $('#combo4');
+
+                            combo4.empty();
+                            combo4.append('<option value="">Selecciona un candidato</option>');
+                            //se recorre los datos, y por cada dato  el valor se asigna al id y se muestra el nombre en el combobox
+                            $.each(data, function (index, candidato) {
+                                combo4.append('<option value="' + candidato.id + '">' + candidato.nombre + '</option>');
+                            });
+                        },
+                        error: function (xhr, status, error) {
+                            console.error('Error al cargar los candidatos:', status, error);
+                        }
+                    });
+                }
+
+
+
+                function validarRut() {
+                    var rut = document.getElementById("rut").value;
+
+                    var xhr = new XMLHttpRequest();
+                    xhr.open("POST", "validaterut.php", true);
+                    xhr.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+
+                    xhr.onreadystatechange = function () {
+                        if (xhr.readyState == 4 && xhr.status == 200) {
+                            document.getElementById("resultadoRut").innerHTML = xhr.responseText;
+                        }
+                    };
+
+                    xhr.send("rut=" + rut);
+                }
+
+                // funciona igual que cargarCandidatos pero este carga las regiones
+                function cargarRegiones() {
+                    $.ajax({
+                        url: 'form.php',
+                        type: 'GET',
+                        data: { accion: 'obtenerRegiones' },
+                        dataType: 'json',
+                        success: function (data) {
+                            var combo1 = $('#combo1');
+
+                            combo1.empty();
+                            combo1.append('<option value="">Selecciona una región</option>');
+
+                            $.each(data, function (index, region) {
+                                combo1.append('<option value="' + region.id + '">' + region.region + '</option>');
+                            });
+                        },
+                        error: function (xhr, status, error) {
+                            console.error('Error al cargar las regiones:', status, error);
+                        }
+                    });
+                }
+
+                //cargar provincias solo se ejecuta si el valor del combobox1 cambia del default a otro
+                $('#combo1').on('change', function () {
+                    cargarProvincias();
+                });
+
+                // Carga las provincias segun el valor de la region, para solo cargar las provincias correspondientes  a la region 
+                function cargarProvincias() {
+                    var idRegion = $('#combo1').val();
+                    var comboProvincias = $('#combo2');
+
+                    comboProvincias.empty().append('<option value="">Selecciona una provincia</option>').prop('disabled', true);
+                    //es esencialmente lo mismo que los demas, pero en este envia el idRegion para cargar los datos que corresponden.
+                    if (idRegion !== '') {
+                        $.ajax({
+                            url: 'form.php',
+                            type: 'GET',
+                            data: { accion: 'obtenerProvincias', idRegion: idRegion },
+                            dataType: 'json',
+                            success: function (data) {
+                                comboProvincias.prop('disabled', false);
+
+                                $.each(data, function (index, provincia) {
+                                    comboProvincias.append('<option value="' + provincia.id + '">' + provincia.provincia + '</option>');
+                                });
+                            },
+                            error: function (xhr, status, error) {
+                                console.error('Error al cargar las provincias:', status, error);
+                            }
+                        });
+                    }
+                }
+
+                //espera a que el combo2 es decir el combobox de provincia cambie para ejecutarse
+                $('#combo2').on('change', function () {
+                    cargarComunas();
+                });
+
+                //funciona de la misma manera que cargarProvincias, pero este carga las comunas a partir del id de la provincia
+                function cargarComunas() {
+                    var idProvincia = $('#combo2').val();
+                    var comboComunas = $('#combo3');
+
+                    comboComunas.empty().append('<option value="">Selecciona una comuna</option>').prop('disabled', true);
+
+                    if (idProvincia !== '') {
+                        $.ajax({
+                            url: 'form.php',
+                            type: 'GET',
+                            data: { accion: 'obtenerComunas', idProvincia: idProvincia },
+                            dataType: 'json',
+                            success: function (data) {
+                                comboComunas.prop('disabled', false);
+
+                                $.each(data, function (index, comuna) {
+                                    comboComunas.append('<option value="' + comuna.id + '">' + comuna.comuna + '</option>');
+                                });
+                            },
+                            error: function (xhr, status, error) {
+                                console.error('Error al cargar las comunas:', status, error);
+                            }
+                        });
+                    }
+                }
+
+                // al apretar el boton, este activa de evento enviar formulario y limpia los campos
+                $('#votarBtn').on('click', function () {
+                    // Lógica para enviar el formulario
+                    enviarFormulario();
+                    limpiarCampos();
+                });
+
+                
+                var web = 0;
+                var tv = 0;
+                var socialnet = 0;
+                var friend = 0;
+
+                // Funcion encargada de actulizar las variables de los checkbox, si esta seleccionada , este pasa de ser 0 a 1 
+                function updateVariables() {
+                    web = $('#web').is(':checked') ? 1 : 0;
+                    tv = $('#tv').is(':checked') ? 1 : 0;
+                    socialnet = $('#socialnet').is(':checked') ? 1 : 0;
+                    friend = $('#friend').is(':checked') ? 1 : 0;
+                }
+
+                // Listener para actualizar los cambios a tiempo real, tambien imprime en consola para ver los valores actuales.
+                $('.checkbox-group input[type="checkbox"]').change(function () {
+                    updateVariables();
+                    console.log('Web:', web, 'TV:', tv, 'Redes Sociales:', socialnet, 'Amigo:', friend);
+                });
+
+                //Funcion encargada de mandar toda la informacion correspondiente a form.php para guardar los datos en la base de datos 
+                function enviarFormulario() {
+
+                    //se inicia una variable para comprobar que los campos cumplen con las condiciones designdas
+                    var isValid = true;
+
+                    function validarCampo(value, fieldName, minLength, regex) {
+                        var trimmedValue = value.trim();
+                        //funcion para no tener espacios en blanco
+                        if (trimmedValue === '') {
+                            alert('El campo "' + fieldName + '" no puede estar en blanco.');
+                            isValid = false;
+                            return;
+                        }
+                        //funcion para establecer minumo de caracteres 
+                        if (minLength && trimmedValue.length < minLength) {
+                            alert('El campo "' + fieldName + '" debe tener al menos ' + minLength + ' caracteres.');
+                            isValid = false;
+                            return;
+                        }
+                        //funcion para pedir que el campo tenga que rellenarse con un formato especifico 
+                        if (regex && !regex.test(trimmedValue)) {
+                            alert('El campo "' + fieldName + '" tiene un formato no válido.');
+                            isValid = false;
+                            return;
+                        }
+                    }
+
+                    // Validar campo "Nombre y Apellido"
+                    var nombreInput = $('#campo1');
+                    var nombreValue = nombreInput.val();
+                    validarCampo(nombreValue, 'Nombre y Apellido', null, /^[a-zA-Z\s]+$/);
+
+                    // Validar campo "Alias"
+                    var aliasInput = $('#campo2');
+                    var aliasValue = aliasInput.val();
+                    // Agregar validación alfanumérica con al menos una letra y un número
+                    validarCampo(aliasValue, 'Alias', 5, /^(?=.*[a-zA-Z])(?=.*\d)[a-zA-Z\d]+$/);
+
+                    // Validar campo "Email"
+                    var emailInput = $('#campo4');
+                    var emailValue = emailInput.val();
+                    validarCampo(emailValue, 'Email', null, /^[^\s@]+@[^\s@]+\.[^\s@]+$/);
+
+                    // Validar checkboxes
+                    var web = $('#web').is(':checked') ? 1 : 0;
+                    var tv = $('#tv').is(':checked') ? 1 : 0;
+                    var socialnet = $('#socialnet').is(':checked') ? 1 : 0;
+                    var friend = $('#friend').is(':checked') ? 1 : 0;
+
+                    // Contar la cantidad de checkboxes seleccionados
+                    var checkboxesSeleccionados = web + tv + socialnet + friend;
+                    if (checkboxesSeleccionados < 2) {
+                        alert('Debes seleccionar al menos 2 checkboxes.');
+                        isValid = false;
+                    }
+
+                    //si se cumple las condiciones se pasa a guardar enviar los datos a la accion insertarVotante para ingresar el votante a la base de datos
+                    if (isValid) {
+                        var nombre = $('#campo1').val();
+                        var alias = $('#campo2').val();
+                        var rut = $('#rut').val();
+                        var email = $('#campo4').val();
+                        var comuna = $('#combo3').val();
+                        var candidato = $('#combo4').val();
+
+                        $.ajax({
+                            type: 'POST',
+                            url: 'form.php?accion=insertarVotante',
+                            data: {
+                                nombre: nombre,
+                                alias: alias,
+                                rut: rut,
+                                email: email,
+                                comuna: comuna,
+                                candidato: candidato,
+                                web: web,
+                                tv: tv,
+                                socialnet: socialnet,
+                                friend: friend
+                            },
+                            dataType: 'json',
+                            success: function (response) {
+                                if (response.hasOwnProperty('error')) {
+                                    if (response.error === 'rut') {
+                                        alert(response.mensaje);
+                                    } else {
+                                        console.error(response.mensaje);
+                                    }
+                                } else {
+                                    console.log(response.mensaje);
+                                    alert('Voto guardado exitosamente.'); 
+
+                                }
+                            },
+                            error: function (error) {
+                                console.log('rayos');
+
+                                // Limpiar campos en caso de error
+                                ;
+                            }
+                        });
+                    } else {
+                        alert('Rut no valido o ya ingresado');
+                    }
+                }
+            });
+        })(jQuery);
+    </script>
+</body>
+
+</html>

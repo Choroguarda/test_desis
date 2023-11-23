@@ -1,0 +1,14 @@
+INSTRUCCIONES PARA INSTALAR EL PROYECYO
+
+base de datos:Mysql
+PHP: 8.1.7
+
+Pasos:
+
+1)Descargar Laragon.
+2)Montar el servidor Laragon e iniciar servicio.
+3)Hacer click en icono de laragon cuando se ejecuta y seleccionar versionde PHP 8.1.7 en caso de no aparecer, se tiene que instalar la version.
+4)En caso de no funcionar se tiene que cambiar el PATH de php de laragon en las variables de ambiente y agregar un path como esto C:\laragon\bin\php\php-8.1.7-Win32-vs16-x64.
+5)Importar o ejecutar el sql.
+6)Ir a database.php y asignar las credenciales correctos (la consulta crea la base de datos por lo que se deja igual, lo unico que se modifica serian los usuarios si tienen designados.
+7)Si todo sale bien, deberian ingresar a http://desis.test/pagina.html.
